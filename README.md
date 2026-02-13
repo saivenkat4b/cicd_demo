@@ -4,6 +4,8 @@ A minimal, beginner-friendly repository that demonstrates **Mobile CI (Continuou
 
 ---
 
+# new commit demo
+
 ## Table of Contents
 
 1. [What this repo demonstrates](#1-what-this-repo-demonstrates)
