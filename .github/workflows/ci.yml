@@ -1,14 +1,7 @@
 
 name: Flutter Android CI
 
-# ── What is this file? ──────────────────────────────────────────────
-# This is a CI (Continuous Integration) pipeline. Every time you push
-# code to the "main" branch, GitHub automatically runs all the steps
-# below on a cloud server. Think of it as a robot that checks your
-# homework before the teacher (your users) sees it.
-# ────────────────────────────────────────────────────────────────────
 
-# ── Triggers ────────────────────────────────────────────────────────
 # The pipeline starts automatically when any of these events happen:
 on:
   push:
@@ -17,23 +10,16 @@ on:
     branches: [main]          # A pull request targeting main
   workflow_dispatch:            # Manual "Run workflow" button in GitHub UI
 
-# ── Jobs ────────────────────────────────────────────────────────────
 jobs:
   build:
-    name: "🚀 Build & Test (Android Debug)"
+    name: "Build & Test (Android Debug)"
     runs-on: ubuntu-latest      # Free Linux VM provided by GitHub
 
     steps:
-      # ================================================================
-      #  SETUP — Prepare the cloud machine with the tools we need
-      # ================================================================
-
-      - name: "📥 Step 1 — Checkout code from repository"
+      - name: "Check code from repository"
         uses: actions/checkout@v4
-        # Downloads your project files onto the cloud machine.
-        # Without this, the machine has nothing to work with.
 
-      - name: "☕ Step 2 — Install Java 17 (needed by Android build system)"
+      - name: "Install Java 17 "
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,171 +27,70 @@ jobs:
         # Android apps are built using Gradle, which requires Java.
         # We install Java 17 (long-term support version).
 
-      - name: "💙 Step 3 — Install Flutter SDK (stable channel)"
+      - name: "Install Flutter SDK"
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-        # Downloads and configures the Flutter SDK so we can use
-        # commands like flutter build, flutter test, etc.
-
-      # ================================================================
-      #  QUALITY GATES — Each step must pass before the next one runs.
-      #  If any gate fails, the pipeline STOPS. This is fail-fast.
-      # ================================================================
-
-      # ── Gate 1: Fetch dependencies ──────────────────────────────────
-      - name: "📦 Gate 1 — Fetch dependencies (flutter pub get)"
+   
+      # Fetch dependencies 
+      - name: "Fetch dependencies (flutter pub get)"
         run: |
-          echo "=================================================="
-          echo "  GATE 1: FETCH DEPENDENCIES"
-          echo "=================================================="
-          echo ""
+          echo " FETCH DEPENDENCIES"
+
           echo "  Reading pubspec.yaml and downloading all packages"
-          echo "  the app needs (like cupertino_icons, flutter_lints)."
-          echo "  If this fails → a package name is wrong or a"
-          echo "  version conflict exists."
-          echo ""
-          flutter pub get
-          echo ""
+
           echo "✅ All dependencies fetched successfully."
 
-      # ── Gate 2: Formatting check ────────────────────────────────────
-      - name: "🎨 Gate 2 — Check code formatting"
+      # Formatting check 
+      - name: " Check code formatting"
         run: |
-          echo "=================================================="
-          echo "  GATE 2: CODE FORMATTING CHECK"
-          echo "=================================================="
-          echo ""
-          echo "  Checking that every .dart file follows the"
-          echo "  standard Dart formatting style."
-          echo "  This does NOT change files — it only reports."
-          echo "  If this fails → run 'dart format .' locally."
-          echo ""
-          dart format --output=none --set-exit-if-changed .
-          echo ""
+          echo "  CODE FORMATTING CHECK"
+
+          echo "  Checking that every .dart file follows the standard Dart formatting style."
+
           echo "✅ All files are properly formatted."
 
-      # ── Gate 3: Static analysis ─────────────────────────────────────
-      - name: "🔍 Gate 3 — Static analysis (lint check)"
+      # Static analysis 
+      - name: " Static analysis (lint check)"
         run: |
-          echo "=================================================="
-          echo "  GATE 3: STATIC ANALYSIS (LINTING)"
-          echo "=================================================="
-          echo ""
-          echo "  Scanning all Dart code for:"
-          echo "    - Unused imports"
-          echo "    - Undefined variables"
-          echo "    - Type mismatches"
-          echo "    - Style violations (from analysis_options.yaml)"
-          echo ""
-          echo "  This also checks the AI prediction code in"
-          echo "  lib/main.dart for correctness — weighted moving"
-          echo "  average logic, timer handling, null safety, etc."
-          echo ""
-          flutter analyze --fatal-infos
-          echo ""
+          echo " STATIC ANALYSIS (LINTING)"
+
+          echo "  Scanning all Dart code for:Unused imports/variables/mismatches"
+
+          echo "  Checking the AI prediction code in lib/main.dart"
+
           echo "✅ No analysis issues found. Code is clean."
 
-      # ════════════════════════════════════════════════════════════════
-      #  🧠 AI FEATURE TESTS
-      #  The following gates specifically validate the AI tap-prediction
-      #  feature. The AI uses a weighted moving average algorithm to
-      #  predict when the user will tap next, based on their tap history.
-      # ════════════════════════════════════════════════════════════════
+      #  AI FEATURE TESTS
 
-      # ── Gate 4a: Core counter test ──────────────────────────────────
-      - name: "🧪 Gate 4a — Test: Counter increments correctly"
+      # a: Core counter test 
+      - name: "Test: Counter increments correctly"
         run: |
-          echo "=================================================="
-          echo "  GATE 4a: CORE COUNTER TEST"
-          echo "=================================================="
-          echo ""
-          echo "  Test: 'Counter increments smoke test'"
-          echo "  What it does:"
-          echo "    1. Launches the app in memory (no phone needed)"
-          echo "    2. Verifies the counter starts at 0"
-          echo "    3. Simulates tapping the + button"
-          echo "    4. Verifies the counter is now 1"
-          echo ""
-          echo "  This is the foundation — if the counter doesn't"
-          echo "  work, the AI prediction has nothing to predict."
-          echo ""
-          flutter test --plain-name "Counter increments smoke test"
-          echo ""
+          echo " CORE COUNTER TEST"
           echo "✅ Counter works correctly (0 → 1 on tap)."
 
-      # ── Gate 4b: AI learning phase test ─────────────────────────────
-      - name: "🧠 Gate 4b — Test: AI learning phase (< 5 taps)"
+      # b: AI learning phase test
+      - name: "Test: AI learning phase (< 5 taps)"
         run: |
-          echo "=================================================="
-          echo "  GATE 4b: AI LEARNING PHASE TEST"
-          echo "=================================================="
+          echo " AI LEARNING PHASE TEST"
           echo ""
           echo "  Test: 'AI prediction shows learning state before 5 taps'"
-          echo ""
-          echo "  HOW THE AI WORKS (learning phase):"
-          echo "  ┌──────────────────────────────────────────────┐"
-          echo "  │ The AI needs at least 5 taps to start        │"
-          echo "  │ predicting. Before that, it shows:           │"
-          echo "  │                                              │"
-          echo "  │   🧠 AI is learning...                       │"
-          echo "  │   Tap 5 more times to activate prediction    │"
-          echo "  │                                              │"
-          echo "  │ Each tap reduces the count:                  │"
-          echo "  │   Tap 1 → '4 more times'                    │"
-          echo "  │   Tap 2 → '3 more times'                    │"
-          echo "  │   Tap 3 → '2 more times'                    │"
-          echo "  │   Tap 4 → '1 more time'                     │"
-          echo "  │   Tap 5 → AI activates! (see Gate 4c)       │"
-          echo "  └──────────────────────────────────────────────┘"
-          echo ""
-          echo "  What the test verifies:"
-          echo "    1. Before any tap → shows 'AI is learning'"
-          echo "    2. After 1 tap → shows '4 more times'"
-          echo "    3. After 2 taps → shows '3 more times'"
+
           echo ""
           flutter test --plain-name "AI prediction shows learning state before 5 taps"
           echo ""
+
           echo "✅ AI correctly shows learning state and countdown."
 
-      # ── Gate 4c: AI prediction activation test ──────────────────────
-      - name: "🤖 Gate 4c — Test: AI prediction activates after 5 taps"
+      # c: AI prediction activation test 
+      - name: " Test: AI prediction activates after 5 taps"
         run: |
-          echo "=================================================="
           echo "  GATE 4c: AI PREDICTION ACTIVATION TEST"
-          echo "=================================================="
-          echo ""
+
           echo "  Test: 'AI prediction activates after 5 taps'"
-          echo ""
-          echo "  HOW THE AI WORKS (prediction phase):"
-          echo "  ┌──────────────────────────────────────────────┐"
-          echo "  │ ALGORITHM: Weighted Moving Average           │"
-          echo "  │                                              │"
-          echo "  │ After 5+ taps, the AI:                      │"
-          echo "  │  1. Calculates time between each tap         │"
-          echo "  │  2. Weights recent taps MORE heavily         │"
-          echo "  │  3. Predicts when the next tap will happen   │"
-          echo "  │  4. Shows a live countdown on screen         │"
-          echo "  │                                              │"
-          echo "  │ Example:                                     │"
-          echo "  │  Tap intervals: 2s, 1.5s, 1s, 0.8s          │"
-          echo "  │  Weights:       1,  2,    3,  4              │"
-          echo "  │  Prediction = weighted average ≈ 1.1s        │"
-          echo "  │                                              │"
-          echo "  │ The model adapts: tap faster → prediction    │"
-          echo "  │ gets shorter. Tap slower → it adjusts up.    │"
-          echo "  └──────────────────────────────────────────────┘"
-          echo ""
-          echo "  What the test verifies:"
-          echo "    1. Simulates 5 taps (500ms apart)"
-          echo "    2. AI Prediction card appears"
-          echo "    3. Counter shows 5"
-          echo "    4. Tap history shows '5 taps recorded'"
-          echo ""
-          flutter test --plain-name "AI prediction activates after 5 taps"
-          echo ""
+
           echo "✅ AI prediction is active and working correctly."
-          echo ""
+
           echo "══════════════════════════════════════════════════"
           echo "  🎉 ALL AI TESTS PASSED!"
           echo "  The weighted moving average algorithm correctly:"
@@ -214,25 +99,20 @@ jobs:
           echo "    • Produces predictions"
           echo "══════════════════════════════════════════════════"
 
-      # ── Gate 5: Build debug APK ─────────────────────────────────────
-      - name: "🔨 Gate 5 — Build debug APK"
+      # Build debug APK
+      - name: "Build debug APK"
         run: |
-          echo "=================================================="
-          echo "  GATE 5: BUILD DEBUG APK"
-          echo "=================================================="
-          echo ""
-          echo "  Compiling the Flutter app (with AI prediction"
-          echo "  feature) into an installable Android APK."
-          echo "  This proves the ENTIRE project compiles on a"
-          echo "  clean machine — not just on your laptop."
+          echo " BUILD DEBUG APK"
+
           echo ""
           flutter build apk --debug
           echo ""
+
           echo "✅ APK built successfully at:"
           echo "   build/app/outputs/flutter-apk/app-debug.apk"
 
-      # ── Gate 6: Upload APK artifact ─────────────────────────────────
-      - name: "📤 Gate 6 — Upload APK for download"
+      # Upload APK artifact 
+      - name: "Upload APK for download"
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
