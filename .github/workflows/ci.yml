@@ -1,7 +1,15 @@
 
+# ---------------------------------------------------------------------------
+# CI Pipeline – Flutter Android (Debug APK)
+# ---------------------------------------------------------------------------
+# This workflow runs automated quality checks on every code change and
+# produces a downloadable debug APK artifact.  It is intentionally simple
+# so that beginners can read it top-to-bottom and understand each step.
+# ---------------------------------------------------------------------------
+
 name: Flutter Android CI
 
-
+# ── Triggers ────────────────────────────────────────────────────────────────
 # The pipeline starts automatically when any of these events happen:
 on:
   push:
@@ -10,112 +18,69 @@ on:
     branches: [main]          # A pull request targeting main
   workflow_dispatch:            # Manual "Run workflow" button in GitHub UI
 
+# ── Jobs ────────────────────────────────────────────────────────────────────
 jobs:
   build:
-    name: "Build & Test (Android Debug)"
-    runs-on: ubuntu-latest      # Free Linux VM provided by GitHub
+    name: Build & Test (Android Debug)
+    runs-on: ubuntu-latest      # Free Linux runner provided by GitHub
 
     steps:
-      - name: "Check code from repository"
+      # ----------------------------------------------------------------
+      # 1. Check out the repository code
+      # ----------------------------------------------------------------
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: "Install Java 17 "
+      # ----------------------------------------------------------------
+      # 2. Set up Java (required by the Android/Gradle build system)
+      # ----------------------------------------------------------------
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-        # Android apps are built using Gradle, which requires Java.
-        # We install Java 17 (long-term support version).
 
-      - name: "Install Flutter SDK"
+      # ----------------------------------------------------------------
+      # 3. Set up Flutter (stable channel)
+      # ----------------------------------------------------------------
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-   
-      # Fetch dependencies 
-      - name: "Fetch dependencies (flutter pub get)"
-        run: |
-          echo " FETCH DEPENDENCIES"
 
-          echo "  Reading pubspec.yaml and downloading all packages"
+      # ================================================================
+      #  Quality Gates – each step must pass before the next one runs
+      # ================================================================
 
-          echo "✅ All dependencies fetched successfully."
+      # ── Gate 1: Fetch dependencies ──────────────────────────────────
+      - name: Fetch dependencies
+        run: flutter pub get
 
-      # Formatting check 
-      - name: " Check code formatting"
-        run: |
-          echo "  CODE FORMATTING CHECK"
+      # ── Gate 2: Formatting check ────────────────────────────────────
+      # Fails if any file is not formatted according to `dart format`.
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
 
-          echo "  Checking that every .dart file follows the standard Dart formatting style."
+      # ── Gate 3: Static analysis ─────────────────────────────────────
+      # Fails if the analyzer finds errors (e.g. unused imports, type
+      # issues).  Rules are defined in analysis_options.yaml.
+      - name: Analyze code
+        run: flutter analyze --fatal-infos
 
-          echo "✅ All files are properly formatted."
+      # ── Gate 4: Unit tests ──────────────────────────────────────────
+      # Runs all tests in the test/ directory.
+      - name: Run unit tests
+        run: flutter test
 
-      # Static analysis 
-      - name: " Static analysis (lint check)"
-        run: |
-          echo " STATIC ANALYSIS (LINTING)"
+      # ── Gate 5: Build debug APK ─────────────────────────────────────
+      # Compiles the app into a debug APK (no signing needed).
+      - name: Build debug APK
+        run: flutter build apk --debug
 
-          echo "  Scanning all Dart code for:Unused imports/variables/mismatches"
-
-          echo "  Checking the AI prediction code in lib/main.dart"
-
-          echo "✅ No analysis issues found. Code is clean."
-
-      #  AI FEATURE TESTS
-
-      # a: Core counter test 
-      - name: "Test: Counter increments correctly"
-        run: |
-          echo " CORE COUNTER TEST"
-          echo "✅ Counter works correctly (0 → 1 on tap)."
-
-      # b: AI learning phase test
-      - name: "Test: AI learning phase (< 5 taps)"
-        run: |
-          echo " AI LEARNING PHASE TEST"
-          echo ""
-          echo "  Test: 'AI prediction shows learning state before 5 taps'"
-
-          echo ""
-          flutter test --plain-name "AI prediction shows learning state before 5 taps"
-          echo ""
-
-          echo "✅ AI correctly shows learning state and countdown."
-
-      # c: AI prediction activation test 
-      - name: " Test: AI prediction activates after 5 taps"
-        run: |
-          echo "  GATE 4c: AI PREDICTION ACTIVATION TEST"
-
-          echo "  Test: 'AI prediction activates after 5 taps'"
-
-          echo "✅ AI prediction is active and working correctly."
-
-          echo "══════════════════════════════════════════════════"
-          echo "  🎉 ALL AI TESTS PASSED!"
-          echo "  The weighted moving average algorithm correctly:"
-          echo "    • Waits for enough data (5 taps minimum)"
-          echo "    • Learns from tap intervals"
-          echo "    • Produces predictions"
-          echo "══════════════════════════════════════════════════"
-
-      # Build debug APK
-      - name: "Build debug APK"
-        run: |
-          echo " BUILD DEBUG APK"
-
-          echo ""
-          flutter build apk --debug
-          echo ""
-
-          echo "✅ APK built successfully at:"
-          echo "   build/app/outputs/flutter-apk/app-debug.apk"
-
-      # Upload APK artifact 
-      - name: "Upload APK for download"
+      # ── Gate 6: Upload APK artifact ─────────────────────────────────
+      # Makes the APK downloadable from the Actions run summary page.
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-        # This makes the APK downloadable from the Actions page.
-        # Team members can grab it without any dev setup.
