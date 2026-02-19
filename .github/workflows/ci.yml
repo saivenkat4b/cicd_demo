@@ -1,83 +1,69 @@
-
-# ---------------------------------------------------------------------------
 # CI Pipeline – Flutter Android (Debug APK)
-# ---------------------------------------------------------------------------
-# This workflow runs automated quality checks on every code change and
-# produces a downloadable debug APK artifact.  It is intentionally simple
-# so that beginners can read it top-to-bottom and understand each step.
-# ---------------------------------------------------------------------------
+# this workflow runs automated quality checks on every code change and produces a downloadable debug APK artifact (simple code)
 
 name: Flutter Android CI
 
-# ── Triggers ────────────────────────────────────────────────────────────────
-# The pipeline starts automatically when any of these events happen:
+# The pipeline starts automatically when any of these events happen:(trigger)
 on:
   push:
-    branches: [main]          # Code merged / pushed to the main branch
+    branches: [main]          # Code merged / pushed to the main branch 
+    #if want to add branches , then [main, develop, staging etc]
   pull_request:
     branches: [main]          # A pull request targeting main
-  workflow_dispatch:            # Manual "Run workflow" button in GitHub UI
+  workflow_dispatch:            # "run workflow" (GitHub)
 
-# ── Jobs ────────────────────────────────────────────────────────────────────
+# Jobs
 jobs:
   build:
     name: Build & Test (Android Debug)
-    runs-on: ubuntu-latest      # Free Linux runner provided by GitHub
+    runs-on: ubuntu-latest      # free Linux runner provided by GitHub
 
     steps:
-      # ----------------------------------------------------------------
-      # 1. Check out the repository code
-      # ----------------------------------------------------------------
+      # check repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ----------------------------------------------------------------
-      # 2. Set up Java (required by the Android/Gradle build system)
-      # ----------------------------------------------------------------
+      # set up Java (req by the Android/Gradle build system)
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # ----------------------------------------------------------------
-      # 3. Set up Flutter (stable channel)
-      # ----------------------------------------------------------------
+      # set up Flutter (stable channel)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
-      # ================================================================
-      #  Quality Gates – each step must pass before the next one runs
-      # ================================================================
+      # Quality checks – each step must pass before the next one runs
 
-      # ── Gate 1: Fetch dependencies ──────────────────────────────────
+      # 1: Fetch dependencies 
       - name: Fetch dependencies
         run: flutter pub get
 
-      # ── Gate 2: Formatting check ────────────────────────────────────
-      # Fails if any file is not formatted according to `dart format`.
+      # 2: Formatting check
+      # fails if file has incorrect `dart format`.
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
 
-      # ── Gate 3: Static analysis ─────────────────────────────────────
-      # Fails if the analyzer finds errors (e.g. unused imports, type
+      # 3: Static analysis
+      # fails if the analyzer finds errors (e.g. unused imports, type
       # issues).  Rules are defined in analysis_options.yaml.
       - name: Analyze code
         run: flutter analyze --fatal-infos
 
-      # ── Gate 4: Unit tests ──────────────────────────────────────────
-      # Runs all tests in the test/ directory.
+      # 4: Unit tests
+      # runs all tests in the test/ directory.
       - name: Run unit tests
         run: flutter test
 
-      # ── Gate 5: Build debug APK ─────────────────────────────────────
+      # 5: Build debug APK
       # Compiles the app into a debug APK (no signing needed).
       - name: Build debug APK
         run: flutter build apk --debug
 
-      # ── Gate 6: Upload APK artifact ─────────────────────────────────
+      # 6: Upload APK artifact
       # Makes the APK downloadable from the Actions run summary page.
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
